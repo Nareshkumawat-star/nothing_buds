@@ -1,0 +1,1206 @@
+/* ============================================================
+   CMF Buds — scroll-driven product sequence
+   Palette, textures and type are derived from the earbuds and
+   the studio they were rendered in.
+   ============================================================ */
+
+/* ── Tokens ─────────────────────────────────────────────── */
+:root {
+  /* sampled from the product */
+  --ink: #0a0a0b;          /* matte earbud / case shell */
+  --graphite: #17191c;      /* lid, inner tray */
+  --slate: #3a3f45;         /* soft shadow side */
+  --steel: #9aa1a9;         /* driver rings, battery cans */
+  --mist: #e7e9ec;          /* studio backdrop */
+  --mist-dim: #c9ced4;
+  --copper: #c4793c;        /* voice coil */
+  --pcb: #2b4e86;           /* mainboard */
+
+  --bg: var(--ink);
+  --fg: var(--mist);
+  --fg-dim: rgba(231, 233, 236, 0.62);
+  --line: rgba(231, 233, 236, 0.14);
+  --line-strong: rgba(231, 233, 236, 0.26);
+  --surface: rgba(255, 255, 255, 0.035);
+
+  /* stage length: how much scroll the 240 frames are spread over */
+  --stage-length: 560vh;
+
+  /* neutral for the stage vignette; .stage__pin overrides it per theme */
+  --vig: 10, 10, 11;
+
+  --pad: clamp(20px, 4vw, 72px);
+  --maxw: 1240px;
+  --radius: 18px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* ── Type scale ────────────────────────────────────────
+     One shared ramp: every font-size in the stylesheet resolves to one of
+     these steps, so the interface reads as a single type system. */
+  --text-2xs: 0.675rem;   /* micro numerals — dots, hud, hint */
+  --text-xs: 0.8125rem;   /* overlines, footnotes, chrome labels */
+  --text-sm: 0.875rem;    /* nav, cards, buttons */
+  --text-base: 1rem;      /* body copy */
+  --text-lg: clamp(1rem, 1.4vw, 1.14rem); /* ledes, beat bodies, spec values */
+  --text-h3: 1.06rem;     /* card headings */
+  --text-h2: clamp(2rem, 4.6vw, 3.6rem);
+  --text-title: clamp(2.4rem, 6.4vw, 5.4rem);
+  --text-display: clamp(3rem, 11vw, 8rem);
+
+  /* case texture: fine stipple over a darker base */
+  --speckle:
+    radial-gradient(rgba(255, 255, 255, 0.05) 0.9px, transparent 1.1px),
+    radial-gradient(rgba(0, 0, 0, 0.55) 0.9px, transparent 1.3px);
+
+  /* film grain */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E");
+}
+
+/* ── Reset ──────────────────────────────────────────────── */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body.is-loading { overflow: hidden; }
+
+img, canvas { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, p, dl, dd, dt, ul, figure { margin: 0; }
+ul { padding: 0; list-style: none; }
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--text-sm);
+  color: var(--copper);
+}
+::selection { background: var(--copper); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── Type scale ─────────────────────────────────────────── */
+.beat__title,
+.h2,
+.outro__title {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.beat__title { font-size: var(--title-size); }
+.h2 { font-size: var(--text-h2); margin-bottom: 24px; }
+.h3 { font-size: var(--text-h3); font-weight: 600; letter-spacing: -0.01em; margin-bottom: 10px; }
+
+.eyebrow,
+.beat__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  /* sentence case: these labels can run a full phrase long, and all-caps
+     only pays off on short tags (kept on .chip, .hint, .spec dt) */
+  letter-spacing: 0.08em;
+}
+.eyebrow { color: var(--copper); margin-bottom: 20px; }
+
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--copper);
+  box-shadow: 0 0 0 4px rgba(196, 121, 60, 0.16);
+  flex: none;
+}
+
+.lede {
+  max-width: 58ch;
+  color: var(--fg-dim);
+  font-size: var(--text-lg);
+}
+.footnote {
+  margin-top: 28px;
+  max-width: 68ch;   /* readable measure — never one long line */
+  font-size: var(--text-sm);
+  color: rgba(231, 233, 236, 0.42);
+}
+
+/* ── Texture layers ─────────────────────────────────────── */
+.fx { position: absolute; inset: 0; pointer-events: none; }
+
+.fx--grain {
+  background-image: var(--grain);
+  background-size: 140px 140px;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+}
+
+.fx--speckle {
+  background-image: var(--speckle);
+  background-size: 7px 7px, 9px 9px;
+  background-position: 0 0, 3px 4px;
+  opacity: 0.5;
+}
+.fx--soft { opacity: 0.32; }
+
+/* melts the frame edges into whichever backdrop sits behind the stage */
+.fx--vignette {
+  background:
+    radial-gradient(120% 78% at 50% 42%, transparent 45%, rgba(var(--vig), 0.4) 100%),
+    linear-gradient(
+      to bottom,
+      rgba(var(--vig), 0.7),
+      transparent 20%,
+      transparent 76%,
+      rgba(var(--vig), 0.85)
+    );
+  opacity: 0.9;
+}
+
+/* ── Loader ─────────────────────────────────────────────── */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  /* default: plain and light, leading into the light main page. A backdrop
+     (.is-backed, added by script.js) flips all of it dark. */
+  --loader-fg: #14161a;
+  --loader-dim: rgba(20, 22, 26, 0.55);
+  --loader-faint: rgba(20, 22, 26, 0.42);
+  --loader-track: rgba(20, 22, 26, 0.12);
+  background: #ffffff;
+  color: var(--loader-fg);
+  padding: var(--pad);
+  overflow: hidden;
+  transition: opacity 0.6s var(--ease), visibility 0.6s;
+}
+/* .is-backed: a dynamic backdrop (video or reel) is in play, so go dark.
+   .is-playing: the video really is playing, so it can take over. */
+.loader.is-backed {
+  --loader-fg: #f2f3f5;
+  --loader-dim: rgba(231, 233, 236, 0.66);
+  --loader-faint: rgba(231, 233, 236, 0.46);
+  --loader-track: rgba(231, 233, 236, 0.16);
+  background: #08090a;
+}
+.loader.is-done { opacity: 0; visibility: hidden; }
+
+/* the cinematic backdrop: the Nothing wordmark, drawn on canvas. Kept sharp —
+   no blur or scaling — so the dot-matrix reads as type, not as footage. */
+/* bottom progress rail: tracks the buds scroll sequence from 0 to 100% */
+.loadbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  height: 2px;
+  background: rgba(231, 233, 236, 0.08);
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  pointer-events: none;
+}
+.loadbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--p, 0));
+  /* brand copper reads on both the dark hero zone and the light frames */
+  background: linear-gradient(90deg, rgba(196, 121, 60, 0.75), #e0955a);
+}
+.loadbar.is-on { opacity: 1; transform: none; }
+html:not(.js-motion) .loadbar { display: none; }
+
+/* loader backdrop video: the campaign clip (the self-hosted loader.webm, with
+   the YouTube embed held in reserve for when that file is unplayable), above
+   the canvas cinematic, below the loader UI */
+.loader__video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.7s var(--ease), filter 0.7s var(--ease);
+  pointer-events: none;
+}
+.loader__video iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  /* 20% overscan keeps the 16:9 cover fit AND crops away YouTube's
+     title card (top-left) and watermark (bottom-right) */
+  width: max(120vw, calc(120vh * 1.7778));
+  height: max(120vh, calc(120vw / 1.7778));
+  transform: translate(-50%, -50%);
+  border: 0;
+  pointer-events: none;
+}
+.loader__video--fallback {
+  object-fit: cover;
+}
+/* No shroud over the backdrop any more: the clip is a plain <video> with no
+   player chrome to hide. (YouTube's pause/back/next/audio buttons are painted
+   inside its cross-origin iframe, so no layer here could ever cover them up —
+   that is why the embed is no longer the primary backdrop.) */
+.loader__video--fallback video,
+video.loader__video--fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Blend of the campaign clip over the dark stage — two knobs, tuned here:
+   --video-dim sits the footage over the #08090a stage (higher = brighter),
+   --video-tone grades its saturation/brightness toward the stage so the
+   clip reads as part of the backdrop instead of a bright rectangle on it.
+   Kept sharp on purpose: the clip is the subject here, so the grade stays
+   close to neutral and no blur is applied. */
+.loader.is-backed {
+  --video-dim: 0.62;
+  --video-tone: saturate(0.9) brightness(0.96);
+}
+.loader.is-backed .loader__video.is-on {
+  opacity: var(--video-dim);
+  filter: var(--video-tone);
+}
+/* the dot-matrix canvas yields while the clip plays */
+.loader.has-video .loader__reel { opacity: 0.18; }
+.loader.is-done .loader__video { opacity: 0 !important; transition: none; }
+
+/* ── Outro: Nothing logo reassembles from dot-matrix particles ── */
+.outro__logo {
+  margin: 0 auto 30px;
+  width: min(680px, 88%);
+  aspect-ratio: 5 / 1;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+}
+.outro__logo.is-on { opacity: 1; }
+.outro__logo canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.loader__reel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.loader__fx { position: absolute; inset: 0; pointer-events: none; }
+
+/* the dot matrix, lifted straight from Nothing's house style */
+.loader__fx--grid {
+  background-image: radial-gradient(rgba(231, 233, 236, 0.55) 1px, transparent 1.4px);
+  background-size: 26px 26px;
+  opacity: 0.1;
+  animation: grid-drift 16s linear infinite;
+}
+@keyframes grid-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 26px 26px; }
+}
+
+.loader__fx--grain {
+  background-image: var(--grain);
+  background-size: 140px 140px;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+}
+/* edges fall off into the dark — the centre stays clear so the wordmark reads.
+   z-index 2 lifts it above the backdrop video (z-index 1) as well as the
+   canvas, so the clip's edges sink into the stage instead of ending in a flat
+   rectangle; the loader UI at z-index 3 still sits above it. */
+.loader__fx--vignette {
+  z-index: 2;
+  background: radial-gradient(135% 105% at 50% 50%, transparent 55%, rgba(6, 7, 8, 0.9) 100%);
+}
+
+/* The loader is a stage: wordmark centred, tagline just under it, progress
+   block anchored to the bottom — nothing shares space, so everything reads. */
+.loader__inner {
+  position: relative;
+  z-index: 3;
+  width: min(360px, 100%);
+  justify-self: center;
+  align-self: end;
+  margin-bottom: max(9vh, 56px);
+}
+
+/* the progress copy keeps its own soft scrim so it stays legible over any
+   particles drifting behind it */
+.loader__inner::before {
+  content: "";
+  position: absolute;
+  inset: -36% -32% -32% -32%;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgba(6, 7, 8, 0.82),
+    rgba(6, 7, 8, 0.6) 60%,
+    transparent 100%
+  );
+}
+
+.loader__tagline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + clamp(48px, 8vh, 76px));
+  z-index: 3;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em; /* re-centre tracked-out caps */
+  text-transform: uppercase;
+  color: rgba(20, 22, 26, 0.55); /* light loader (reduced motion) */
+  transition: opacity 0.4s var(--ease), color 0.4s var(--ease);
+}
+.loader.is-backed .loader__tagline { color: rgba(231, 233, 236, 0.6); }
+.loader.is-done .loader__tagline { opacity: 0; }
+
+/* soft oval scrim behind the wordmark, so the canvas dots read against the
+   drifting grid and particles. Only on the dark (is-backed) loader. */
+.loader__logo-scrim {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(78vw, 640px);
+  height: clamp(190px, 34vh, 300px);
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(
+    closest-side,
+    rgba(6, 7, 8, 0.9),
+    rgba(6, 7, 8, 0.66) 62%,
+    transparent 100%
+  );
+  transition: opacity 0.6s var(--ease);
+}
+.loader.is-backed .loader__logo-scrim { opacity: 1; }
+/* the oval exists to make the dot-matrix wordmark read on the bare stage;
+   while the campaign clip is the backdrop it would only smear a dark ellipse
+   over the footage, so it stands down */
+.loader.is-backed.has-video .loader__logo-scrim { opacity: 0; }
+
+.loader__brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--text-sm); font-weight: 600;
+  letter-spacing: 0.3em;
+  margin-bottom: 28px;
+}
+
+.loader__row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: var(--text-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--loader-dim);
+  margin-bottom: 12px;
+}
+.loader__pct { color: currentColor; font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; font-size: var(--text-sm); }
+
+.loader__track {
+  height: 2px;
+  background: var(--loader-track);
+  overflow: hidden;
+}
+.loader__bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--steel), var(--copper));
+  transition: width 0.25s var(--ease);
+}
+/* the fill throws a little light on the dark backdrop */
+.loader.is-backed .loader__bar { box-shadow: 0 0 18px rgba(196, 121, 60, 0.55); }
+
+.loader__hint {
+  margin-top: 16px;
+  font-size: var(--text-xs);
+  color: var(--loader-faint);
+}
+
+/* ── Nav ────────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  /* share the content grid: on wide screens this matches .wrap's centred
+     (viewport − maxw) / 2 edge instead of capping out at --pad */
+  padding: 16px max(var(--pad), calc((100% - var(--maxw)) / 2));
+  /* sits over the light main page by default; .is-past flips it once the dark
+     sections below the sequence scroll up behind it */
+  color: #14161a;
+  --nav-dim: rgba(20, 22, 26, 0.62);
+  --nav-line: rgba(20, 22, 26, 0.22);
+  transition: background 0.35s var(--ease), backdrop-filter 0.35s var(--ease),
+    border-color 0.35s var(--ease), color 0.35s var(--ease);
+  border-bottom: 1px solid transparent;
+}
+.nav.is-stuck {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom-color: rgba(20, 22, 26, 0.1);
+}
+.nav.is-past {
+  background: rgba(10, 10, 11, 0.72);
+  color: var(--mist);
+  --nav-dim: rgba(231, 233, 236, 0.72);
+  --nav-line: rgba(231, 233, 236, 0.26);
+  border-bottom-color: rgba(231, 233, 236, 0.12);
+}
+
+.nav__brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 600; letter-spacing: 0.26em; font-size: var(--text-sm);
+}
+.nav__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--copper);
+}
+.nav__model { color: var(--nav-dim); font-weight: 400; letter-spacing: 0.06em; }
+
+.nav__links { display: flex; gap: 28px; font-size: var(--text-sm); }
+.nav__links a {
+  position: relative;
+  color: var(--nav-dim);
+  transition: color 0.2s;
+}
+.nav__links a::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--copper);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s var(--ease);
+}
+.nav__links a:hover { color: currentColor; }
+/* scroll-spy (script.js) marks the section currently in view */
+.nav__links a[aria-current="true"] { color: currentColor; }
+.nav__links a[aria-current="true"]::after { transform: scaleX(1); }
+
+/* solid pill, matching the footer's .btn--primary so the primary action
+   reads the same everywhere; the outline treatment stays for secondary */
+.nav__cta {
+  font-size: var(--text-sm);
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #14161a;
+  color: #fff;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.nav__cta:hover { background: #000; border-color: #000; color: #fff; }
+.nav.is-past .nav__cta { background: var(--mist); border-color: var(--mist); color: var(--ink); }
+.nav.is-past .nav__cta:hover { background: #fff; border-color: #fff; color: var(--ink); }
+
+/* ── Stage ──────────────────────────────────────────────── */
+.stage {
+  position: relative;
+  height: var(--stage-length);
+}
+
+.stage__pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  /* The main page is light; the sections below it stay dark, so the stage
+     carries its own theme rather than using the page's --bg / --fg tokens. */
+  background: #ffffff;
+  --vig: 255, 255, 255;
+  --beat-fg: #14161a;
+  --beat-fg-dim: rgba(20, 22, 26, 0.82);
+  --beat-line: rgba(20, 22, 26, 0.22);
+  /* soft halo behind the copy, for where type crosses a dark part of a frame.
+     Near-opaque so display-size type stays legible over the busy exploded view */
+  --scrim: rgba(255, 255, 255, 0.88);
+  --scrim-strong: #ffffff;
+}
+/* only added by script.js if a frame's lit region is genuinely dark */
+.stage__pin.is-dark {
+  --vig: 10, 10, 11;
+  --beat-fg: var(--mist);
+  --beat-fg-dim: rgba(231, 233, 236, 0.8);
+  --beat-line: rgba(231, 233, 236, 0.24);
+  --scrim: rgba(10, 10, 11, 0.85);
+  --scrim-strong: rgba(10, 10, 11, 0.97);
+}
+
+#frame-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.stage__pin .fx--grain { z-index: 2; }
+.stage__pin .fx--speckle { z-index: 3; opacity: 0.16; }
+.stage__pin .fx--vignette { z-index: 4; }
+
+/* text beats */
+.beats {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  padding: var(--pad);
+  display: grid;
+  align-content: center;
+  pointer-events: none;
+}
+
+.beat {
+  position: relative;
+  grid-area: 1 / 1;
+  /* The box is sized off the title's own font size (NOT the 16px body font):
+     a `ch`-based cap resolved at body size is far narrower than a display-size
+     title, so long words like "Engineered" used to overflow the box — and on
+     right-aligned beats that overflow ran off the viewport edge and was
+     clipped. 6.5em fits the longest single word with headroom; the 48vw cap
+     keeps the block clear of the product in the middle of the stage. */
+  --title-size: var(--text-title);
+  max-width: min(calc(var(--title-size) * 6.5), 48vw);
+  opacity: 0;
+  color: var(--beat-fg);
+  --beat-glow: 0;              /* 0..1 — animated by JS as the block fades in */
+  --beat-glow-pulse: 0;        /* 0..1 — ambient halo pulse after full visibility */
+  box-shadow:
+    /* inner ring — tight, brighter, sits close to the text */
+    0 0 calc(var(--beat-glow) * 18px)  rgba(var(--vig), calc(var(--beat-glow) * 0.42)),
+    /* outer ring — wider, softer, for ambient depth */
+    0 0 calc(var(--beat-glow) * 44px)  rgba(var(--vig), calc(var(--beat-glow) * 0.22)),
+    /* ambient halo — widest, faintest, pulses gently once the block is in */
+    0 0 calc((var(--beat-glow) * 0.10 + var(--beat-glow-pulse) * 0.12) * 72px)
+      rgba(var(--vig), calc(var(--beat-glow) * 0.10 + var(--beat-glow-pulse) * 0.16));
+  transition: color 0.45s var(--ease), box-shadow 0.45s var(--ease);
+  will-change: opacity, transform, box-shadow;
+}
+.beat::before {
+  content: "";
+  position: absolute;
+  inset: -16% -24% -20% -28%;
+  z-index: -1;
+  border-radius: 50%;
+  /* the gradient holds at --scrim all the way to the ellipse edge (the
+     element is masked by its own border-radius) and the blur melts that rim
+     into the frame — no transparent corners left for a title glyph to land on */
+  background: radial-gradient(
+    closest-side,
+    var(--scrim-strong),
+    var(--scrim-strong) 66%,
+    var(--scrim) 84%,
+    var(--scrim) 100%
+  );
+  filter: blur(14px);
+  pointer-events: none;
+  transition: background 0.45s var(--ease);
+}
+.beat--left  { justify-self: start;  align-self: center; }
+.beat--right { justify-self: end;    align-self: center; text-align: right; }
+
+.beat__eyebrow { color: var(--beat-fg-dim); margin-bottom: 22px; transition: color 0.45s var(--ease); }
+.beat__title {
+  color: var(--beat-fg);
+  text-shadow: 0 1px 40px rgba(var(--vig), 0.7), 0 0 26px rgba(var(--vig), 0.55);
+  line-height: 1.02;
+}
+.beat__body {
+  margin-top: 26px;
+  max-width: 34ch;
+  color: var(--beat-fg-dim);
+  font-size: var(--text-lg);
+  transition: color 0.45s var(--ease);
+}
+.beat--right .beat__body { margin-left: auto; }
+
+/* hud */
+.hud {
+  position: absolute;
+  right: var(--pad);
+  bottom: var(--pad);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--beat-fg-dim);
+  transition: color 0.45s var(--ease);
+}
+.hud__track {
+  width: 1px; height: 74px;
+  background: var(--beat-line);
+  position: relative;
+  transition: background 0.45s var(--ease);
+}
+.hud__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--copper);
+  transform: scaleY(0);
+  transform-origin: top;
+}
+.hud.is-left { right: auto; left: var(--pad); }
+.hud__num {
+  font-size: var(--text-2xs);
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* chip */
+.chip {
+  position: absolute;
+  left: var(--pad);
+  bottom: var(--pad);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--beat-fg-dim);
+  border: 1px solid var(--beat-line);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  transition: color 0.45s var(--ease), border-color 0.45s var(--ease),
+    opacity 0.4s var(--ease), visibility 0.4s;
+}
+.chip.is-hidden { opacity: 0; visibility: hidden; }
+
+/* ── Component callouts ─────────────────────────────────── */
+.hotspots {
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 7;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform-origin: 0 0;
+}
+
+/* the numbered dot sits exactly on the part, in frame coordinates */
+.hotspot-dot {
+  position: absolute;
+  width: 32px; height: 32px;
+  margin: -16px 0 0 -16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  /* a real touch target: taps focus the matching legend card (script.js).
+     visibility — not opacity — gates it, so hidden dots catch no taps. */
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  visibility: hidden;
+  /* ink dot on the light stage reads far better than a mist one */
+  background: #14161a;
+  color: #fff;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  /* crisp white ring keeps the dot readable when it lands on a dark part;
+     the thin ink halo outside it keeps definition on the white backdrop */
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 3.5px rgba(10, 10, 11, 0.35),
+    0 6px 20px rgba(10, 10, 11, 0.3);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.5s var(--ease), transform 0.55s var(--ease),
+    background 0.25s var(--ease), color 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+  will-change: opacity, transform;
+}
+.hotspot-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--copper);
+  animation: ping 2.8s var(--ease) infinite;
+}
+.hotspot-dot.is-active {
+  background: var(--copper);
+  color: #fff;
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 6px rgba(196, 121, 60, 0.35),
+    0 8px 24px rgba(10, 10, 11, 0.36);
+}
+
+/* tooltip beside the marker: shown while the matching legend card (or the dot
+   itself) is hovered or focused, so the component name sits right at the part
+   instead of only in the bottom-right legend */
+.hotspot-dot__tag {
+  position: absolute;
+  left: calc(100% + 9px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 9px 5px;
+  border-radius: 6px;
+  background: rgba(10, 10, 11, 0.88);
+  border: 1px solid rgba(231, 233, 236, 0.16);
+  color: var(--mist);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+  pointer-events: none;
+}
+.hotspot-dot.is-active .hotspot-dot__tag { opacity: 1; }
+
+/* leader lines: one hairline per component, drawn by script.js from each
+   legend card's number chip out to its marker. Sits under the cards, so each
+   line appears to emerge from its card on the way to the part. */
+.legend-leads {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.legend-leads line {
+  stroke: rgba(10, 10, 11, 0.32);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s var(--ease);
+}
+@keyframes ping {
+  0%   { transform: scale(1); opacity: 0.7; }
+  60%  { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* legend: one card per component, revealed one after another */
+.legend {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  /* Width is capped by the VIEWPORT, not the hotspot layer: on portrait
+     viewports the layer is a letterboxed band narrower than the screen, so a
+     %-of-layer width collapsed the two columns into slivers. min() picks the
+     larger of the two caps — the layer width when the frame is huge (desktop
+     cover fit), the viewport cap when the frame is a narrow band (phones,
+     portrait letterbox). JS re-anchors the legend to the layer each frame, so
+     right: auto wins here; these right/left values are only the no-JS state. */
+  width: min(max(320px, 32vw), calc(100vw - 2 * var(--pad)));
+  display: grid;
+  /* two columns keep the legend short enough to clear the left-hand parts */
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  pointer-events: auto;
+}
+.hotspot {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 8px 11px 9px;
+  min-width: 0;
+  border-radius: 12px;
+  background: rgba(10, 10, 11, 0.58);
+  border: 1px solid rgba(231, 233, 236, 0.14);
+  backdrop-filter: blur(12px) saturate(1.1);
+  color: var(--mist);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.45s var(--ease), transform 0.45s var(--ease),
+    border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.hotspot:hover,
+.hotspot.is-active,
+.hotspot:focus-visible {
+  border-color: rgba(196, 121, 60, 0.62);
+  background: rgba(10, 10, 11, 0.8);
+  outline: none;
+}
+.hotspot__no {
+  flex: none;
+  width: 20px; height: 20px;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--copper);
+  color: #fff;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hotspot__body { display: grid; gap: 2px; min-width: 0; }
+.hotspot__body strong { font-size: var(--text-sm); font-weight: 600; letter-spacing: -0.005em; }
+.hotspot__body em {
+  display: none;                    /* revealed on hover / focus (desktop) */
+  font-style: normal;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: rgba(231, 233, 236, 0.62);
+  /* the hover description may wrap to several lines — let it, instead of
+     clipping mid-word inside the fixed-width card */
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+/* scroll hint */
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--pad);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-2xs);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--beat-fg-dim);
+  transition: opacity 0.4s var(--ease), color 0.45s var(--ease);
+}
+.hint.is-hidden { opacity: 0; }
+.hint__line {
+  width: 34px; height: 1px;
+  background: var(--copper);
+  animation: pulse 2.4s var(--ease) infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scaleX(0.4); opacity: 0.5; }
+  50%      { transform: scaleX(1);   opacity: 1; }
+}
+
+/* ── Panels ─────────────────────────────────────────────── */
+.panel {
+  position: relative;
+  background: var(--bg);
+  padding: clamp(80px, 12vh, 150px) 0;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.panel--alt { background: #0e0f11; }
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  width: min(var(--maxw), 100% - var(--pad) * 2);
+  margin-inline: auto;
+}
+
+/* swatches */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2px;
+  margin: 48px 0 clamp(56px, 8vh, 96px);
+  border: 1px solid var(--line);
+}
+.swatch {
+  /* matches .texcard so swatch and texture-card content share one left axis */
+  padding: 22px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+}
+.swatch:last-child { border-right: 0; }
+.swatch__chip {
+  width: 100%;
+  height: 60px;
+  border-radius: 6px;
+  background: var(--c);
+  /* every chip gets BOTH rings, so the border treatment is identical whether
+     the fill is dark (inset ring) or light (outer ring) */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(231, 233, 236, 0.28);
+  margin-bottom: 12px;
+}
+.swatch__name { font-size: var(--text-sm); font-weight: 600; }
+.swatch__note { font-size: var(--text-xs); color: var(--fg-dim); }
+
+/* scroll reveal: sections paint in as they come up. Gated behind a class that
+   script.js only adds when motion is allowed, so no-JS and reduced-motion
+   visitors get the content outright. */
+html.js-motion .js-reveal {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition: opacity 0.7s var(--ease), transform 0.85s var(--ease);
+}
+html.js-motion .js-reveal.is-in { opacity: 1; transform: none; }
+
+/* texture cards */
+.texgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+.texcard {
+  padding: 22px;
+  border: 1px solid var(--line);
+  /* tighter radius, in step with the 6px swatch chips — same 'card' language
+     as the swatch row above instead of a competing one */
+  border-radius: 10px;
+  background: var(--surface);
+}
+.texcard p { color: var(--fg-dim); font-size: var(--text-sm); margin-top: 4px; }
+.texcard__tex {
+  height: 110px;
+  border-radius: 6px;   /* echoes .swatch__chip */
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+}
+.texcard__tex--speckle {
+  background-color: var(--graphite);
+  background-image: var(--speckle);
+  background-size: 7px 7px, 9px 9px;
+}
+
+.texcard__tex--grain {
+  background-color: var(--graphite);
+  background-image: var(--grain),
+    radial-gradient(90% 120% at 30% 0%, rgba(231, 233, 236, 0.16), transparent 60%);
+  background-size: 140px 140px, 100% 100%;
+}
+
+.texcard__tex--metal {
+  background-color: #23262a;
+  background-image: repeating-linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.11) 0px,
+    rgba(255, 255, 255, 0.11) 1px,
+    transparent 1px,
+    transparent 5px
+  ),
+  linear-gradient(160deg, rgba(231, 233, 236, 0.22), transparent 55%);
+}
+
+/* features */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1px;
+  margin-top: 52px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.feature {
+  background: #0e0f11;
+  padding: 28px 24px 34px;
+}
+.feature__no {
+  display: block;
+  font-size: var(--text-2xs);
+  letter-spacing: 0.2em;
+  color: var(--copper);
+  margin-bottom: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.feature p { color: var(--fg-dim); font-size: var(--text-sm); }
+
+/* specs */
+.specs {
+  margin-top: 48px;
+  /* narrower measure: values sit near their labels instead of hugging the
+     far right edge of a full-width row */
+  max-width: 820px;
+  border-top: 1px solid var(--line);
+}
+.spec {
+  /* one shared template, so the value column starts on the same axis in
+     every row regardless of label length */
+  display: grid;
+  grid-template-columns: 13em 1fr;
+  column-gap: clamp(28px, 6vw, 64px);
+  align-items: baseline;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.spec dt {
+  font-size: var(--text-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.spec dd { font-size: var(--text-lg); text-align: left; }
+
+/* ── Outro ──────────────────────────────────────────────── */
+.outro {
+  position: relative;
+  padding: clamp(100px, 16vh, 190px) 0 0;
+  background: linear-gradient(to bottom, #0e0f11, var(--ink) 40%);
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.outro__inner { text-align: center; }
+.outro__title {
+  font-size: var(--text-display);
+  letter-spacing: -0.05em;
+  background: linear-gradient(180deg, var(--mist), rgba(231, 233, 236, 0.35));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.outro .lede { margin: 18px auto 0; }
+.outro__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;   /* breathing room between the pill CTAs */
+  justify-content: center;
+  margin-top: 36px;
+}
+.outro__actions .btn {
+  /* equal-width pair: the primary no longer looks shoved left next to the
+     wider secondary button */
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 13px 26px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+}
+.btn:hover { background: rgba(231, 233, 236, 0.08); transform: translateY(-1px); }
+.btn--primary {
+  background: var(--mist);
+  border-color: var(--mist);
+  color: var(--ink);
+}
+.btn--primary:hover { background: #fff; }
+
+.footer {
+  position: relative;
+  z-index: 1;
+  width: min(var(--maxw), 100% - var(--pad) * 2);
+  margin: clamp(70px, 12vh, 130px) auto 0;
+  padding: 22px 0 30px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: var(--text-xs);
+  color: rgba(231, 233, 236, 0.45);
+}
+
+.noscript {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 200;
+  padding: 16px var(--pad);
+  background: var(--copper);
+  color: #fff;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+
+/* On desktop the legend is compact by default so it covers as little of the
+   exploded view as possible; the description is revealed on hover or focus.
+   Safe to expand: the legend sits to the right of every dot. */
+@media (min-width: 861px) {
+  .hotspot { padding: 9px 12px 10px; }
+  .hotspot:hover .hotspot__body em,
+  .hotspot.is-active .hotspot__body em,
+  .hotspot:focus-visible .hotspot__body em { display: block; }
+}
+
+@media (max-width: 860px) {
+  .nav__links { display: none; }
+
+  .beat,
+  .beat--right {
+    justify-self: start;
+    align-self: end;
+    text-align: left;
+    /* same title-derived width as desktop — a plain ch cap would clip
+       display-size titles here too */
+    max-width: min(calc(var(--title-size) * 6.5), calc(100% - 2 * var(--pad)));
+  }
+  .beat--right .beat__body { margin-left: 0; }
+  .beats { align-content: end; padding-bottom: 112px; }
+  .beat__body { margin-top: 18px; max-width: 100%; }
+
+  .hint { display: none; }
+  .chip { bottom: auto; top: 84px; left: var(--pad); }
+  .hud { bottom: var(--pad); }
+  .hud__track { height: 52px; }
+
+  .footer { flex-direction: column; }
+  .spec { grid-template-columns: 1fr; row-gap: 6px; }
+
+  /* phones: the legend sits above the letterboxed frame as a compact list,
+     clear of the copy that owns the bottom of the screen */
+  /* tight rows: on a 320x568 phone the empty band above the frame is only
+     ~136px once the nav is accounted for, and the legend has to fit inside it */
+  .legend { width: min(calc(100% - 32px), 320px); gap: 3px; }
+  .hotspot { padding: 5px 9px; gap: 8px; border-radius: 10px; }
+  .hotspot__no { width: 20px; height: 20px; }
+  .hotspot__body strong { line-height: 1.3; }
+  .hotspot__body em { display: none; }
+  .hotspot-dot { width: 28px; height: 28px; margin: -14px 0 0 -14px; }
+
+  /* phones: cards are stacked in the band above the frame, so the hairlines
+     would sit behind them doing nothing but adding visual noise */
+  .legend-leads { display: none; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint__line { animation: none; }
+  .hotspot-dot::after { animation: none; opacity: 0; }
+  .btn:hover { transform: none; }
+  /* the beat stagger is scroll-driven movement; show the whole block at once */
+  .beat > * { opacity: 1 !important; transform: none !important; }
+}

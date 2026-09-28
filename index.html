@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CMF Buds — Sound, Engineered</title>
+    <meta
+      name="description"
+      content="CMF Buds true wireless earbuds. A scroll-driven look from the closed case to every component inside."
+    />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preload" as="image" href="media/ezgif-frame-001.jpg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="is-loading" data-boot>
+    <!-- glyph-portal app mounts here; script.js keeps driving the loader AND
+         the restored buds scroll sequence below the portal -->
+    <div id="root" class="boot-root"></div>
+
+    <!-- ── Legacy loader (unchanged) ─────────────────────────── -->
+    <div class="loadbar" id="loadbar" aria-hidden="true"></div>
+    <div class="loader" id="loader" role="status" aria-live="polite">
+      <canvas class="loader__reel" id="loader-logo" aria-hidden="true"></canvas>
+      <video
+        class="loader__video loader__video--fallback"
+        id="loader-video-fallback"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+      >
+        <source src="media/loader.mp4" type="video/mp4" />
+        <source src="Recording 2026-09-26 215300.mp4" type="video/mp4" />
+      </video>
+      <div class="loader__fx loader__fx--grid" aria-hidden="true"></div>
+      <div class="loader__fx loader__fx--vignette" aria-hidden="true"></div>
+      <div class="loader__logo-scrim" aria-hidden="true"></div>
+      <div class="loader__inner">
+        <div class="loader__brand"><i class="dot"></i>CMF</div>
+        <div class="loader__row">
+          <span class="loader__label">Loading sequence</span>
+          <span class="loader__pct" id="loader-pct">0%</span>
+        </div>
+        <div class="loader__track"><div class="loader__bar" id="loader-bar"></div></div>
+        <p class="loader__hint" id="loader-hint">Preloading frames for smooth scrubbing</p>
+      </div>
+      <div class="loader__tagline" aria-hidden="true">by Nothing</div>
+    </div>
+
+    <main id="top">
+      <!-- ── Pinned scroll stage (the buds animation) ─────────── -->
+      <section class="stage" id="stage">
+        <div class="stage__pin" id="stage-pin">
+          <canvas
+            id="frame-canvas"
+            aria-label="CMF Buds earbuds, from the closed case to an exploded view of every component"
+          ></canvas>
+
+          <div class="fx fx--grain" aria-hidden="true"></div>
+          <div class="fx fx--speckle" aria-hidden="true"></div>
+          <div class="fx fx--vignette" aria-hidden="true"></div>
+
+          <div class="beats" id="beats">
+            <article class="beat beat--left" data-in="-0.06" data-out="0.15">
+              <p class="beat__eyebrow"><i class="dot"></i>CMF Buds — True Wireless</p>
+              <h1 class="beat__title">Sound,<br />engineered.</h1>
+              <p class="beat__body">Scroll to open the case and take it apart, piece by piece.</p>
+            </article>
+
+            <article class="beat beat--right" data-in="0.17" data-out="0.35">
+              <p class="beat__eyebrow">Fit</p>
+              <h2 class="beat__title">Precision that<br />disappears.</h2>
+              <p class="beat__body">A 4.5&nbsp;g bud that seals, holds and stays out of the way.</p>
+            </article>
+
+            <article class="beat beat--left" data-in="0.37" data-out="0.55">
+              <p class="beat__eyebrow">Architecture</p>
+              <h2 class="beat__title">Every part,<br />deliberate.</h2>
+              <p class="beat__body">Acoustic mesh, driver rings, cells and board — assembled with intent.</p>
+            </article>
+
+            <article class="beat beat--right" data-in="0.57" data-out="0.75">
+              <p class="beat__eyebrow">Acoustics</p>
+              <h2 class="beat__title">Engineered<br />from the inside.</h2>
+              <p class="beat__body">A 12.4&nbsp;mm bio-fibre driver, tuned with Dirac and Ultra Bass&nbsp;2.0.</p>
+            </article>
+
+            <article class="beat beat--right" data-in="0.77" data-out="0.97">
+              <p class="beat__eyebrow">Design</p>
+              <h2 class="beat__title">Built to be<br />carried.</h2>
+              <p class="beat__body">A rotating aluminium dial for a lanyard, IP54 sealing, and 35.5&nbsp;hours of playback.</p>
+            </article>
+          </div>
+
+          <div class="hotspots" id="hotspots">
+            <ul class="legend" id="legend">
+              <li class="hotspot" data-x="0.500" data-y="0.222" data-at="0.862" tabindex="-1">
+                <span class="hotspot__no"></span>
+                <span class="hotspot__body">
+                  <strong>Case lid</strong>
+                  <em>Closes with a firm snap</em>
+                </span>
+              </li>
+              <li class="hotspot" data-x="0.088" data-y="0.408" data-at="0.878" tabindex="-1">
+                <span class="hotspot__no"></span>
+                <span class="hotspot__body">
+                  <strong>Silicone ear tip</strong>
+                  <em>Three sizes, medium fitted</em>
+                </span>
+              </li>
+              <li class="hotspot" data-x="0.262" data-y="0.425" data-at="0.894" tabindex="-1">
+                <span class="hotspot__no"></span>
+                <span class="hotspot__body">
+                  <strong>Touch &amp; mic array</strong>
+                  <em>Two HD mics per bud</em>
+                </span>
+              </li>
+              <li class="hotspot" data-x="0.406" data-y="0.548" data-at="0.910" tabindex="-1">
+                <span class="hotspot__no"></span>
+                <span class="hotspot__body">
+                  <strong>Mainboard</strong>
+                  <em>Bluetooth 5.3, dual-device pairing</em>
+                </span>
+              </li>
+              <li class="hotspot" data-x="0.585" data-y="0.524" data-at="0.926" tabindex="-1">
+                <span class="hotspot__no"></span>
+                <span class="hotspot__body">
+                  <strong>Voice coil</strong>
+                  <em>Drives the 12.4&nbsp;mm bio-fibre driver</em>
+                </span>
+              </li>
+              <li class="hotspot" data-x="0.265" data-y="0.552" data-at="0.942" tabindex="-1">
+                <span class="hotspot__no"></span>
+                <span class="hotspot__body">
+                  <strong>Bud battery</strong>
+                  <em>45&nbsp;mAh each — 8 hours of playback</em>
+                </span>
+              </li>
+              <li class="hotspot" data-x="0.500" data-y="0.792" data-at="0.955" tabindex="-1">
+                <span class="hotspot__no"></span>
+                <span class="hotspot__body">
+                  <strong>USB-C charging</strong>
+                  <em>10 minutes adds 4 hours</em>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="hud" aria-hidden="true">
+            <div class="hud__track"><div class="hud__fill" id="hud-fill"></div></div>
+            <span class="hud__num" id="hud-num">001</span>
+          </div>
+
+          <div class="chip" id="chip" aria-hidden="true">
+            <i class="dot"></i><span id="chip-label">CMF Buds</span>
+          </div>
+
+          <div class="hint" id="hint"><span class="hint__line"></span>Scroll</div>
+        </div>
+      </section>
+
+      <!-- ── Materials & finish ───────────────────────────────── -->
+      <section class="panel" id="materials">
+        <div class="fx fx--speckle fx--soft" aria-hidden="true"></div>
+        <div class="wrap">
+          <p class="eyebrow"><i class="dot"></i>Materials &amp; finish</p>
+          <h2 class="h2">Colours pulled<br />from the product.</h2>
+          <p class="lede">
+            The palette is sampled straight from the buds and the studio they were shot in — matte
+            shell, brushed metal, copper windings and the soft grey backdrop that surrounds it.
+          </p>
+
+          <ul class="swatches">
+            <li class="swatch">
+              <span class="swatch__chip" style="--c: #0a0a0b"></span>
+              <span class="swatch__name">Ink Black</span>
+              <span class="swatch__note">Matte shell &amp; cradle</span>
+            </li>
+            <li class="swatch">
+              <span class="swatch__chip" style="--c: #17191c"></span>
+              <span class="swatch__name">Graphite</span>
+              <span class="swatch__note">Lid &amp; inner tray</span>
+            </li>
+            <li class="swatch">
+              <span class="swatch__chip" style="--c: #9aa1a9"></span>
+              <span class="swatch__name">Brushed Steel</span>
+              <span class="swatch__note">Driver rings, cells</span>
+            </li>
+            <li class="swatch">
+              <span class="swatch__chip" style="--c: #c4793c"></span>
+              <span class="swatch__name">Copper</span>
+              <span class="swatch__note">Voice coil windings</span>
+            </li>
+            <li class="swatch">
+              <span class="swatch__chip" style="--c: #e7e9ec"></span>
+              <span class="swatch__name">Studio Mist</span>
+              <span class="swatch__note">Backdrop &amp; highlight</span>
+            </li>
+            <li class="swatch">
+              <span class="swatch__chip" style="--c: #2b4e86"></span>
+              <span class="swatch__name">PCB Blue</span>
+              <span class="swatch__note">Mainboard silkscreen</span>
+            </li>
+          </ul>
+
+          <div class="texgrid">
+            <article class="texcard">
+              <div class="texcard__tex texcard__tex--speckle" aria-hidden="true"></div>
+              <h3 class="h3">Speckled shell</h3>
+              <p>The stippled finish on the case is echoed across the page as a fine speckle layer, so the UI feels cut from the same material.</p>
+            </article>
+            <article class="texcard">
+              <div class="texcard__tex texcard__tex--grain" aria-hidden="true"></div>
+              <h3 class="h3">Studio grain</h3>
+              <p>A soft film-grain pass sits over the frame sequence to keep the render and the typography in the same room.</p>
+            </article>
+            <article class="texcard">
+              <div class="texcard__tex texcard__tex--metal" aria-hidden="true"></div>
+              <h3 class="h3">Brushed metal</h3>
+              <p>Directional highlights nod to the machined rings and battery cans visible in the exploded view.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Inside / features ────────────────────────────────── -->
+      <section class="panel panel--alt" id="inside">
+        <div class="wrap">
+          <p class="eyebrow"><i class="dot"></i>Inside</p>
+          <h2 class="h2">Built around a<br />12.4&nbsp;mm driver.</h2>
+          <div class="features">
+            <article class="feature">
+              <span class="feature__no">01</span>
+              <h3 class="h3">Dirac-tuned sound</h3>
+              <p>A 12.4&nbsp;mm bio-fibre driver with a custom TPU diaphragm, tuned with Dirac and Ultra Bass Technology 2.0.</p>
+            </article>
+            <article class="feature">
+              <span class="feature__no">02</span>
+              <h3 class="h3">42&nbsp;dB of quiet</h3>
+              <p>Hybrid active noise cancellation up to 42&nbsp;dB, with a dedicated transparency mode when you want back in.</p>
+            </article>
+            <article class="feature">
+              <span class="feature__no">03</span>
+              <h3 class="h3">Four mics, clearer calls</h3>
+              <p>Two HD microphones per bud with AI environmental noise cancellation, plus stem vents that cut wind interference.</p>
+            </article>
+            <article class="feature">
+              <span class="feature__no">04</span>
+              <h3 class="h3">35.5 hours in total</h3>
+              <p>Up to 8 hours in the buds and 35.5 with the case. A 10-minute USB-C top-up buys 4 more hours.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Specs ────────────────────────────────────────────── -->
+      <section class="panel" id="specs">
+        <div class="wrap">
+          <p class="eyebrow"><i class="dot"></i>Specifications</p>
+          <h2 class="h2">The numbers.</h2>
+          <dl class="specs" id="spec-list">
+            <div class="spec"><dt>Driver</dt><dd>12.4&nbsp;mm bio-fibre, tuned by Dirac</dd></div>
+            <div class="spec"><dt>Noise cancelling</dt><dd>Up to 42&nbsp;dB hybrid ANC + transparency</dd></div>
+            <div class="spec"><dt>Wireless</dt><dd>Bluetooth 5.3, dual-device pairing</dd></div>
+            <div class="spec"><dt>Codecs</dt><dd>SBC, AAC</dd></div>
+            <div class="spec"><dt>Playback — buds</dt><dd>Up to 8&nbsp;h, 5.6&nbsp;h with ANC on</dd></div>
+            <div class="spec"><dt>Playback — with case</dt><dd>Up to 35.5&nbsp;h, 24&nbsp;h with ANC on</dd></div>
+            <div class="spec"><dt>Charging</dt><dd>USB-C — 10&nbsp;min adds 4&nbsp;h</dd></div>
+            <div class="spec"><dt>Microphones</dt><dd>4 (two per bud), AI ENC for calls</dd></div>
+            <div class="spec"><dt>Water &amp; dust</dt><dd>IP54</dd></div>
+            <div class="spec"><dt>Weight</dt><dd>4.5&nbsp;g per bud, 43&nbsp;g case</dd></div>
+            <div class="spec"><dt>Case</dt><dd>54.7 × 54.7 × 22.9&nbsp;mm, alloy lanyard dial</dd></div>
+          </dl>
+          <p class="footnote">
+            CMF Buds (1st gen, 2024). The other models in the lineup differ — Buds Pro 2 runs
+            43&nbsp;h, Buds 2 has 48&nbsp;dB ANC and an 11&nbsp;mm driver. See the README for sources.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── Outro / Footer ────────────────────────────────────── -->
+      <section class="outro" id="buy">
+        <div id="reveal-footer-root"></div>
+      </section>
+    </main>
+
+    <noscript>
+      <p class="noscript">
+        This page animates the earbuds from a sequence of 240 frames and needs JavaScript enabled.
+      </p>
+    </noscript>
+
+    <!-- legacy engine: preloads frames, runs the Nothing particle logo, scrubs
+         the restored buds stage, flips is-done / is-loading exactly as before -->
+    <script src="script.js" defer></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
