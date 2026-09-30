@@ -35,9 +35,9 @@ export default function RevealTextDemo() {
     </footer>
   );
 
-  if (container) {
-    return createPortal(content, container);
+  if (!container) {
+    return null;
   }
 
-  return content;
+  return createPortal(content, container);
 }

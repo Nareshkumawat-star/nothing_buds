@@ -10,9 +10,24 @@
 (() => {
   'use strict';
 
+  const getAutoBasePath = () => {
+    if (window.CMF_FRAMES_BASE) return window.CMF_FRAMES_BASE;
+    try {
+      const scripts = document.getElementsByTagName('script');
+      for (let i = 0; i < scripts.length; i++) {
+        const src = scripts[i].getAttribute('src') || '';
+        if (src.includes('script.js')) {
+          const idx = src.lastIndexOf('/');
+          if (idx !== -1) return src.substring(0, idx + 1) + 'media/';
+        }
+      }
+    } catch (e) {}
+    return './media/';
+  };
+
   const CONFIG = {
-    /* where the frames live — change to './frames/' if you move them */
-    basePath: window.CMF_FRAMES_BASE || './media/',
+    /* where the frames live — auto-detected base path */
+    basePath: getAutoBasePath(),
     prefix: 'ezgif-frame-',
     ext: '.jpg',
     total: 240,
@@ -34,8 +49,8 @@
     /* 0..1 — higher snaps to the target frame faster */
     lerp: 0.15,
 
-    /* parallel image requests */
-    concurrency: 8,
+    /* parallel image requests — tuned down to prevent CDN 429 rate limiting */
+    concurrency: 5,
 
     /* mean luminance of the lit region above/below these flips the text theme */
     lightAbove: 0.56,
@@ -110,7 +125,8 @@
 
   /* ── Build the frame list ──────────────────────────────── */
   function buildFrameList() {
-    const step = window.innerWidth < CONFIG.mobileBreakpoint ? CONFIG.mobileStep : 1;
+    const isMobile = window.matchMedia(CONFIG.mobileQuery).matches || window.innerWidth < CONFIG.mobileBreakpoint;
+    const step = isMobile ? CONFIG.mobileStep : 1;
     const numbers = [];
     for (let n = CONFIG.startAt; n < CONFIG.startAt + CONFIG.total; n += step) numbers.push(n);
 
@@ -822,13 +838,22 @@
   }
 
   /* ── Preload ───────────────────────────────────────────── */
-  function loadImage(src) {
+  function loadImage(src, retries = 2) {
     return new Promise((resolve) => {
-      const img = new Image();
-      img.decoding = 'async';
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = src;
+      const attempt = (n) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+          if (n > 0) {
+            setTimeout(() => attempt(n - 1), 250);
+          } else {
+            resolve(null);
+          }
+        };
+        img.src = src;
+      };
+      attempt(retries);
     });
   }
 
